@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import * as Tone from 'tone';
-import VexFlow from 'vexflow';
+import VexFlow, { Barline } from 'vexflow';
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -10,7 +10,7 @@ const PitchTest = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState(["C4", "Bb4", "E4", "G4", "E4", "B4", "F4", "A4"]);
-    const [vexContainer, setVexContainer] = useState()
+    // const [vexContainer, setVexContainer] = useState()
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const randomizeNotes = () => {
@@ -31,6 +31,7 @@ const PitchTest = () => {
     useEffect(() => {
         if(!containerRef.current) return;
         
+        const { Barline } = VexFlow;
 
         const renderer = new VexFlow.Renderer(containerRef.current, VexFlow.Renderer.Backends.SVG);
         renderer.resize(500, 200);
@@ -39,10 +40,8 @@ const PitchTest = () => {
         
         // context.clear();
         context.save();
-        context.setFillStyle("white");
-        context.setStrokeStyle("white");
-
-        
+        // context.setFillStyle("white");
+        // context.setStrokeStyle("white");
 
         const stave = new VexFlow.Stave(10, 40, 500);
         stave.addClef('treble').addTimeSignature('4/4');
@@ -72,9 +71,15 @@ const PitchTest = () => {
         const voice = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
         voice.addTickables(vexNotes);
         
-        const formatter = new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
+        new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
 
         voice.draw(context, stave);
+
+        const barline = new Barline('end');
+        barline.setContext(context).setStave(stave);
+        barline.setX(stave.getWidth());
+        barline.draw();
+
 
         context.restore();
         
