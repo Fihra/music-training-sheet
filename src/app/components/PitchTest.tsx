@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import * as Tone from 'tone';
-import VexFlow, { Barline } from 'vexflow';
 import { useSession } from 'next-auth/react';
+import NoteSequence from './NoteSequence';
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -11,14 +11,9 @@ const PitchTest = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState(["C4", "Bb4", "E4", "G4", "E4", "B4", "F4", "A4"]);
-    // const [vexContainer, setVexContainer] = useState()
-    const containerRef = useRef<HTMLDivElement | null>(null);
-
     const { data: session } = useSession();
 
     const randomizeNotes = () => {
-        if(!containerRef.current) return;
-        containerRef.current.innerHTML = '';
         let newSetOfNotes = [];
         for(let i = 0; i < 8; i++){
             const randomNum = pitches[Math.floor(Math.random() * pitches.length)];
@@ -32,67 +27,7 @@ const PitchTest = () => {
     }
 
     useEffect(() => {
-        if(!containerRef.current) return;
-        
-        const { Barline } = VexFlow;
-
-        const renderer = new VexFlow.Renderer(containerRef.current, VexFlow.Renderer.Backends.SVG);
-        renderer.resize(500, 200);
-        
-        const context = renderer.getContext();
-        
-        // context.clear();
-        context.save();
-        // context.setFillStyle("white");
-        // context.setStrokeStyle("white");
-
-        const stave = new VexFlow.Stave(10, 40, 500);
-        stave.addClef('treble').addTimeSignature('4/4');
-        stave.setContext(context).draw();
-
-        // const vexNotes = [
-        //     new VexFlow.StaveNote({ keys: ['c/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['d/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['e/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['f/4'], duration: 'q'}),
-        // ];
-        console.log(notes);
-
-        const vexNotes = notes.map((n) => {
-            const splitNote = n.split('');
-            const currentOctave = splitNote[splitNote.length - 1];
-            const mainNote = splitNote.splice(0, splitNote.length-1).join('');
-
-            if(mainNote.length < 2){
-                return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: '8n'});
-            }
-            return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: '8n'}).addModifier(new VexFlow.Accidental(mainNote[1]));
-
-            
-        })
-        
-        const voice = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
-        voice.addTickables(vexNotes);
-        
-        new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
-
-        voice.draw(context, stave);
-
-        const barline = new Barline('end');
-        barline.setContext(context).setStave(stave);
-        barline.setX(stave.getWidth());
-        barline.draw();
-
-
-        context.restore();
-        
-
-    }, [notes]);
-
-    useEffect(() => {
-        
         const seq = new Tone.Sequence((time, note) => {
-            // console.log("My Notes: ", notes);
             const synth = new Tone.Synth().toDestination();
             synth.triggerAttackRelease(note, "8n", time);
         }, notes, "8n");
@@ -107,11 +42,10 @@ const PitchTest = () => {
     }, [notes]);
 
     const playSound = () => {
-        setIsPlaying(!isPlaying);
+        setIsPlaying( (prev) => {
+            const newIsPlaying = !prev;
 
-        console.log("My Notes: ", notes);
-
-        if(isPlaying){
+            if(newIsPlaying){
             Tone.start().then(() => {
                 if(sequence){
                     Tone.Transport.start();
@@ -131,15 +65,15 @@ const PitchTest = () => {
         } else {
             sequence?.stop();
         }
-        
+
+        return newIsPlaying;
+        })        
     }
 
     const addSequence = async () => {
         const noteSequence = notes;
-
         if(!session?.user) return;
 
-        // console.log(session?.user);
         const res = await fetch('/api/musicsheets', {
             method: 'POST',
             headers: {
@@ -152,11 +86,9 @@ const PitchTest = () => {
     return(
         <div>
             <h2>Pitch Testing</h2>
-            <button onClick={playSound}>{isPlaying ? "Play": "Stop"}</button>
+            <button onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
             <button onClick={randomizeNotes}>Generate Sequence</button>
-            <div ref={containerRef}/>
-            
-            
+            <NoteSequence sheet_tones={notes}/>
             {session && <button onClick={addSequence}>Add to list</button>}
 
         </div>
