@@ -18,7 +18,12 @@ const Navbar = () => {
                 </>
             )
         } else {
-            return <Link href="/" className={styles.navlink}><button onClick={() => signOut({ callbackUrl: "/login"})}>Logout</button></Link>
+            return (
+            <>
+                <Link href="/dashboard" className={styles.navlink}>Dashboard</Link>
+                <Link href="/" className={styles.navlink}><button onClick={() => signOut({ callbackUrl: "/login"})}>Logout</button></Link>
+            </>
+            )
         }
     }
 
