@@ -2,11 +2,23 @@ import mysql from "mysql2/promise";
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 interface User {
     user_id: number;
     email: string;
     musicSheets: string[]
+}
+
+export async function GET(req:  NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        console.log(session);
+
+    }catch (error) {
+        return NextResponse.json({ error: error}, {status: 500})
+    }
 }
 
 export async function POST(req: NextRequest, res: NextResponse) {
