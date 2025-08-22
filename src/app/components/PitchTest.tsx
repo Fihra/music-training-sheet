@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as Tone from 'tone';
 import VexFlow, { Barline } from 'vexflow';
+import { useSession } from 'next-auth/react';
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -12,6 +13,8 @@ const PitchTest = () => {
     const [notes, setNotes] = useState(["C4", "Bb4", "E4", "G4", "E4", "B4", "F4", "A4"]);
     // const [vexContainer, setVexContainer] = useState()
     const containerRef = useRef<HTMLDivElement | null>(null);
+
+    const { data: session } = useSession();
 
     const randomizeNotes = () => {
         if(!containerRef.current) return;
@@ -131,6 +134,21 @@ const PitchTest = () => {
         
     }
 
+    const addSequence = async () => {
+        const noteSequence = notes;
+
+        if(!session?.user) return;
+
+        // console.log(session?.user);
+        const res = await fetch('/api/musicsheets', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({musicSheet: noteSequence, user_id: session.user.user_id})
+        })
+    }
+
     return(
         <div>
             <h2>Pitch Testing</h2>
@@ -138,6 +156,9 @@ const PitchTest = () => {
             <button onClick={randomizeNotes}>Generate Sequence</button>
             <div ref={containerRef}/>
             
+            
+            {session && <button onClick={addSequence}>Add to list</button>}
+
         </div>
     )
 }
