@@ -1,11 +1,33 @@
+"use client";
+
 import Link from "next/link";
+import styles from "../page.module.css";
+import { useSession, signOut } from "next-auth/react";
 
 const Navbar = () => {
+    const { data: session, status} = useSession();
+
+    if(status === "loading") return <p>Loading....</p>;
+
+    const showLogout = ()=> {
+        if(!session) {
+            return (
+                <>
+                    <Link href="/signup" className={styles.navlink}>Sign up</Link>
+                    <Link href="/login" className={styles.navlink}>Login</Link>
+                </>
+            )
+        } else {
+            return <Link href="/" className={styles.navlink}><button onClick={() => signOut({ callbackUrl: "/login"})}>Logout</button></Link>
+        }
+    }
+
     return (
-        <nav>
-            <Link href="/">Home</Link>
-            <Link href="/music-generate">Generate</Link>
-            <Link href="/signup">Sign up</Link>
+        <nav className={styles.navbar}>
+            <Link href="/" className={styles.navlink}>Home</Link>
+            <Link href="/music-generate" className={styles.navlink}>Generate</Link>
+            {showLogout()}
+            
         </nav>
     )
 }
