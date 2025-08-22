@@ -6,7 +6,7 @@ import type { RowDataPacket } from "mysql2";
 import { db } from "@/lib/db";
 
 interface User {
-    id: number;
+    user_id: number;
     email: string;
     password: string;
 }
@@ -37,8 +37,7 @@ export const authOptions: NextAuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if(!isValid) return null;
 
-
-        return { id: user.id, email: user.email };
+        return { user_id: user.user_id, email: user.email };
             },
         })
     ],
@@ -48,13 +47,13 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async jwt({ token, user }){
             if(user) {
-                token.id = (user as any).id;
+                token.user_id = (user as any).user_id;
             }
             return token;
         },
         async session({ session, token }) {
             if(token) {
-                (session.user as any).id = token.id;
+                (session.user as any).user_id = token.user_id;
             }
             return session;
         },
