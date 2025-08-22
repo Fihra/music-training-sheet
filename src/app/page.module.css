@@ -132,6 +132,19 @@ a.secondary {
   }
 }
 
+.navbar {
+  display: flex;
+  gap: 100;
+  padding-top: 20px;
+  justify-content: center;
+  /* justify-content: space-around; */
+}
+
+.navlink {
+  /* display: inline-block;
+  margin-right: 20px; */
+}
+
 @media (max-width: 600px) {
   .page {
     padding: 32px;
