@@ -15,13 +15,17 @@
   padding: 40px;
   /* gap: 24px; */
   font-family: var(--font-geist-sans);
+  text-align: center;
 }
 
 body {
-  background-color: white;
+  background-color: rgb(207, 186, 141);
   color: black;
 }
 
+.musicContainer {
+  background-color: rgb(207, 186, 141);
+}
 
 /* @media (prefers-color-scheme: dark) {
   .page {
@@ -138,11 +142,18 @@ a.secondary {
   padding-top: 20px;
   justify-content: center;
   /* justify-content: space-around; */
+  background-color: blue;
+  padding: 20px;
 }
 
 .navlink {
   /* display: inline-block;
   margin-right: 20px; */
+  background-color: green;
+}
+
+.dashboardContainer {
+  text-align: center;
 }
 
 @media (max-width: 600px) {
