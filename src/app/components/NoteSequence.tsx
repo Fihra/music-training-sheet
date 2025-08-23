@@ -3,18 +3,34 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as Tone from 'tone';
 import VexFlow from 'vexflow';
+import styles from "../page.module.css";
 
 type Props = {
     sheet_tones: string[];
+    musicSheetID: number | null;
 }
 
-const NoteSequence = ({sheet_tones} : Props) => {
+const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState<string[]>([]);
     const containerRef = useRef<HTMLDivElement | null>(null);
 
-    console.log("sheet tones: ", sheet_tones);
+    const deleteSequence = async () => {
+        console.log("delete this sequence: ", musicSheetID);
+        try {
+            const response = await fetch(`/api/musicsheets/${musicSheetID}`, {
+                method: 'DELETE'
+            });
+
+            if(!response.ok){
+                throw new Error("Failed to delete music sheet");
+            }
+            console.log("Music deleted successfully");
+        } catch(error) {
+            console.error("Error deleting music: ", error);
+        }
+    }
 
     useEffect(() => {
         if(!containerRef.current) return;
@@ -75,18 +91,60 @@ const NoteSequence = ({sheet_tones} : Props) => {
         barline.setContext(context).setStave(stave);
         barline.setX(stave.getWidth());
         barline.draw();
-
-
         context.restore();
-        
-
     }, [notes]);
 
+    useEffect(() => {
+        const seq = new Tone.Sequence((time, note) => {
+            const synth = new Tone.Synth().toDestination();
+            synth.triggerAttackRelease(note, "4n", time);
+        }, notes, "4n");
+            
+        setSequence(seq);
+
+        return() => {
+            seq.dispose();
+            Tone.Transport.stop();
+        };
+
+    }, [notes]);
+    
+    const playSound = () => {
+        setIsPlaying( (prev) => {
+            const newIsPlaying = !prev;
+
+            if(newIsPlaying){
+            Tone.start().then(() => {
+                if(sequence){
+                    Tone.Transport.start();
+                    sequence.start();
+
+                    const duration = notes.length * 500;
+
+                    setTimeout(() => {
+                        setIsPlaying(false);
+                        Tone.Transport.stop();
+                        sequence.stop();
+                    }, duration);
+                }
+            }).catch(error => {
+                console.log("Error starting ToneJS: ", error);
+            })
+        } else {
+            sequence?.stop();
+            Tone.Transport.stop();
+        }
+
+        return newIsPlaying;
+        })        
+    }
+
     return(
-        <div ref={containerRef}/>
-        // <div>
-        //     <p>Music Sheet</p>
-        // </div>
+        <div className={styles.musicContainer}>
+            <div ref={containerRef}/>
+            <button onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
+            {musicSheetID && <button onClick={deleteSequence}>Delete</button>}
+        </div>
     )
 }
 
