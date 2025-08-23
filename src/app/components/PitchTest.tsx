@@ -1,15 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import * as Tone from 'tone';
+import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import NoteSequence from './NoteSequence';
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
 const PitchTest = () => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState(["C4", "Bb4", "E4", "G4", "E4", "B4", "F4", "A4"]);
     const { data: session } = useSession();
 
@@ -24,50 +21,6 @@ const PitchTest = () => {
         }
         console.log(notes);
         setNotes(newSetOfNotes);
-    }
-
-    useEffect(() => {
-        const seq = new Tone.Sequence((time, note) => {
-            const synth = new Tone.Synth().toDestination();
-            synth.triggerAttackRelease(note, "8n", time);
-        }, notes, "8n");
-            
-        setSequence(seq);
-
-        return() => {
-            seq.dispose();
-            Tone.Transport.stop();
-        };
-
-    }, [notes]);
-
-    const playSound = () => {
-        setIsPlaying( (prev) => {
-            const newIsPlaying = !prev;
-
-            if(newIsPlaying){
-            Tone.start().then(() => {
-                if(sequence){
-                    Tone.Transport.start();
-                    sequence.start();
-
-                    const duration = notes.length * 500;
-
-                    setTimeout(() => {
-                        setIsPlaying(false);
-                        Tone.Transport.stop();
-                        sequence.stop();
-                    }, duration);
-                }
-            }).catch(error => {
-                console.log("Error starting ToneJS: ", error);
-            })
-        } else {
-            sequence?.stop();
-        }
-
-        return newIsPlaying;
-        })        
     }
 
     const addSequence = async () => {
@@ -86,9 +39,8 @@ const PitchTest = () => {
     return(
         <div>
             <h2>Pitch Testing</h2>
-            <button onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
             <button onClick={randomizeNotes}>Generate Sequence</button>
-            <NoteSequence sheet_tones={notes}/>
+            <NoteSequence sheet_tones={notes} musicSheetID={null}/>
             {session && <button onClick={addSequence}>Add to list</button>}
 
         </div>
