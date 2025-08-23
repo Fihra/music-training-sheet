@@ -67,6 +67,9 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
         // ];
         console.log(notes);
 
+        const stave2 = new VexFlow.Stave(stave.getX() + stave.getWidth(),  40, 200);
+        stave2.setContext(context).draw();
+
         const vexNotes = notes.map((n) => {
             const splitNote = n.split('');
             const currentOctave = splitNote[splitNote.length - 1];
@@ -76,6 +79,8 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
                 return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: '8n'});
             }
             return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: '8n'}).addModifier(new VexFlow.Accidental(mainNote[1]));
+
+           
 
             
         })
@@ -142,8 +147,8 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
     return(
         <div className={styles.musicContainer}>
             <div ref={containerRef}/>
-            <button onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
-            {musicSheetID && <button onClick={deleteSequence}>Delete</button>}
+            <button className={styles.cta} onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
+            {musicSheetID && <button className={styles.cta} onClick={deleteSequence}>Delete</button>}
         </div>
     )
 }

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "../../page.module.css";
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -25,16 +26,23 @@ const Login = () => {
     }
 
     return(
-        <form onSubmit={handleSubmit}>
-            <label>Email:</label>
-            <input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-            />
-            <label>Password:</label>
-            <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-            />
-            <button type="submit">
-                Login
-            </button>
+        <form onSubmit={handleSubmit} className={styles.formContainer}>
+            <h2>Login</h2>
+            <section>
+                <label>Email:</label>
+                <input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+                />
+            </section>
+            <section>
+                <label>Password:</label>
+                <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                />
+            </section>
+            <section>
+                <button className={styles.cta} type="submit">
+                    Login
+                </button>
+            </section>
         </form>
     )
 

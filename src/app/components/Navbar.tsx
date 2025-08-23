@@ -21,7 +21,7 @@ const Navbar = () => {
             return (
             <>
                 <Link href="/dashboard" className={styles.navlink}>Dashboard</Link>
-                <Link href="/" className={styles.navlink}><button onClick={() => signOut({ callbackUrl: "/login"})}>Logout</button></Link>
+                <Link href="/" className={styles.navlink} onClick={() => signOut({ callbackUrl: "/login"})}>Logout</Link>
             </>
             )
         }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import styles from "../../page.module.css";
 
 interface FormData {
     email: string;
@@ -36,16 +37,19 @@ const SignUpForm = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
+        <form onSubmit={handleSubmit} className={styles.formContainer}>
+            <h2>Sign Up</h2>
+            <section>
                 <label htmlFor="email">Email</label>
                 <input id="email" name="email" type="email" placeholder="email" onChange={handleChange} value={signupForm.email} required/>
-            </div>
-            <div>
+            </section>
+            <section>
                 <label htmlFor="password">Password</label>
                 <input id="password" name="password" type="password" onChange={handleChange} value={signupForm.password} required/>
-            </div>
-            <button type="submit">Submit</button>
+            </section>
+            <section>
+                <button className={styles.cta} type="submit">Submit</button>
+            </section>
         </form>
     )
 }

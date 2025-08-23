@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import NoteSequence from './NoteSequence';
+import styles from "../page.module.css";
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -37,11 +38,11 @@ const PitchTest = () => {
     }
 
     return(
-        <div>
+        <div className={styles.generateContainer}>
             <h2>Pitch Testing</h2>
-            <button onClick={randomizeNotes}>Generate Sequence</button>
+            <button className={styles.cta} onClick={randomizeNotes}>Generate Sequence</button>
             <NoteSequence sheet_tones={notes} musicSheetID={null}/>
-            {session && <button onClick={addSequence}>Add to list</button>}
+            {session && <button className={styles.cta} onClick={addSequence}>Add to list</button>}
 
         </div>
     )
