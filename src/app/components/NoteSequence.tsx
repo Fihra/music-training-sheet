@@ -18,8 +18,8 @@ interface NoteProps {
 const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
-    const [notes, setNotes] = useState<string[]>([]);
-    const [playbackNotes, setPlaybackNotes] = useState();
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [playbackNotes, setPlaybackNotes] = useState<(Note | null)[]>();
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const deleteSequence = async () => {
