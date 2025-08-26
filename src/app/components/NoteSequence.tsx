@@ -5,15 +5,21 @@ import * as Tone from 'tone';
 import VexFlow from 'vexflow';
 import styles from "../page.module.css";
 
-type Props = {
-    sheet_tones: string[];
+interface Note {
+    noteValue: string;
+    rhythmValue: string;
+}
+
+interface NoteProps {
+    sheet_tones: Note[];
     musicSheetID: number | null;
 }
 
-const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
+const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState<string[]>([]);
+    const [playbackNotes, setPlaybackNotes] = useState();
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const deleteSequence = async () => {
@@ -33,11 +39,41 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
     }
 
     useEffect(() => {
+        setPlaybackNotes(sheet_tones);
+    }, []);
+
+    useEffect(() => {
         if(!containerRef.current) return;
         containerRef.current.innerHTML = '';
         
         setNotes(sheet_tones);
     }, [sheet_tones])
+
+    useEffect(() => {
+        let myPlaybackNotes = [];
+        
+        if(!notes || notes.length === 0) return;
+
+        for(let i = 0; i < notes.length; i++) {
+
+            if(notes[i].rhythmValue === "8n"){
+                myPlaybackNotes.push(notes[i]);
+            }
+
+            else if(notes[i].rhythmValue === "q"){
+                const newPlayNote = {
+                    noteValue: notes[i].noteValue,
+                    rhythmValue: "8n"
+                }
+                myPlaybackNotes.push(newPlayNote);
+                myPlaybackNotes.push(null);
+            }
+            
+            console.log("show me the note: ", notes[i]);
+        }
+        console.log(myPlaybackNotes);
+        setPlaybackNotes(myPlaybackNotes);
+    }, [notes])
 
     useEffect(() => {
         if(notes.length === 0) return;
@@ -65,30 +101,28 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
         //     new VexFlow.StaveNote({ keys: ['e/4'], duration: 'q'}),
         //     new VexFlow.StaveNote({ keys: ['f/4'], duration: 'q'}),
         // ];
-        console.log(notes);
-
-        const stave2 = new VexFlow.Stave(stave.getX() + stave.getWidth(),  40, 200);
-        stave2.setContext(context).draw();
+        console.log("NoteSEquence: ", notes);
 
         const vexNotes = notes.map((n) => {
-            const splitNote = n.split('');
+            const splitNote = n.noteValue.split('');
             const currentOctave = splitNote[splitNote.length - 1];
             const mainNote = splitNote.splice(0, splitNote.length-1).join('');
 
             if(mainNote.length < 2){
-                return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: '8n'});
+                return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: n.rhythmValue});
             }
-            return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: '8n'}).addModifier(new VexFlow.Accidental(mainNote[1]));
+            return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental(mainNote[1]));
 
-           
-
-            
         })
         
         const voice = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
         voice.addTickables(vexNotes);
-        
-        new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
+
+        const formatter = new VexFlow.Formatter();
+        formatter.joinVoices([voice]).formatToStave([voice], stave);
+
+        // new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
+        // new VexFlow.Formatter().joinVoices([voice2]).format([voice2], 400);
 
         voice.draw(context, stave);
 
@@ -100,10 +134,16 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
     }, [notes]);
 
     useEffect(() => {
-        const seq = new Tone.Sequence((time, note) => {
-            const synth = new Tone.Synth().toDestination();
-            synth.triggerAttackRelease(note, "4n", time);
-        }, notes, "4n");
+            const seq = new Tone.Sequence((time, note) => {
+
+            // console.log("note in sequence: ", note);
+            // const synth = new Tone.PluckSynth().toDestination();
+            if(note !== null) {
+                const synth = new Tone.Synth().toDestination();
+                synth.triggerAttackRelease(note.noteValue, "8n", time);
+            }
+            
+        }, playbackNotes, "8n");
             
         setSequence(seq);
 
@@ -112,7 +152,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : Props) => {
             Tone.Transport.stop();
         };
 
-    }, [notes]);
+    }, [playbackNotes]);
     
     const playSound = () => {
         setIsPlaying( (prev) => {
