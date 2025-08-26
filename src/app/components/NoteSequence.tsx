@@ -8,6 +8,7 @@ import styles from "../page.module.css";
 interface Note {
     noteValue: string;
     rhythmValue: string;
+    isExtraNatural: boolean;
 }
 
 interface NoteProps {
@@ -68,10 +69,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
                 myPlaybackNotes.push(newPlayNote);
                 myPlaybackNotes.push(null);
             }
-            
-            console.log("show me the note: ", notes[i]);
         }
-        console.log(myPlaybackNotes);
         setPlaybackNotes(myPlaybackNotes);
     }, [notes])
 
@@ -95,22 +93,18 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         stave.addClef('treble').addTimeSignature('4/4');
         stave.setContext(context).draw();
 
-        // const vexNotes = [
-        //     new VexFlow.StaveNote({ keys: ['c/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['d/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['e/4'], duration: 'q'}),
-        //     new VexFlow.StaveNote({ keys: ['f/4'], duration: 'q'}),
-        // ];
-        console.log("NoteSEquence: ", notes);
-
         const vexNotes = notes.map((n) => {
             const splitNote = n.noteValue.split('');
             const currentOctave = splitNote[splitNote.length - 1];
             const mainNote = splitNote.splice(0, splitNote.length-1).join('');
 
+            if(n.isExtraNatural){
+                return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental("n"));
+            }
+
             if(mainNote.length < 2){
                 return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: n.rhythmValue});
-            }
+            }  
             return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental(mainNote[1]));
 
         })
@@ -135,8 +129,6 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
 
     useEffect(() => {
             const seq = new Tone.Sequence((time, note) => {
-
-            // console.log("note in sequence: ", note);
             // const synth = new Tone.PluckSynth().toDestination();
             if(note !== null) {
                 const synth = new Tone.Synth().toDestination();
@@ -167,7 +159,6 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
 
                     sequence.start(0);
                     Tone.Transport.start();
-                    // sequence.start();
 
                     const duration = notes.length * 500;
                     const steps = sequence.length;
