@@ -145,6 +145,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
             
         }, playbackNotes, "8n");
             
+        seq.loop = false;
         setSequence(seq);
 
         return() => {
@@ -161,10 +162,23 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
             if(newIsPlaying){
             Tone.start().then(() => {
                 if(sequence){
+                    Tone.Transport.stop();
+                    Tone.Transport.position = 0;
+
+                    sequence.start(0);
                     Tone.Transport.start();
-                    sequence.start();
+                    // sequence.start();
 
                     const duration = notes.length * 500;
+                    const steps = sequence.length;
+                    const stepDuration = Tone.Time("8n").toSeconds();
+                    const stopTime = steps * stepDuration;
+
+                    Tone.Transport.scheduleOnce(() => {
+                        setIsPlaying(false);
+                        Tone.Transport.stop();
+                        sequence.stop();
+                    }, `+${stopTime}`)
 
                     setTimeout(() => {
                         setIsPlaying(false);
