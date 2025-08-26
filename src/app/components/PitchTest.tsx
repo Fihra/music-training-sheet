@@ -9,14 +9,14 @@ const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"
 
 const PitchTest = () => {
     const [notes, setNotes] = useState([
-        {noteValue: "C4", rhythmValue: "8n"},
-        {noteValue: "Bb4", rhythmValue: "8n"},
-        {noteValue: "E4", rhythmValue: "8n"},
-        {noteValue: "G4", rhythmValue: "8n"},
-        {noteValue: "E4", rhythmValue: "8n"},
-        {noteValue: "B4", rhythmValue: "8n"},
-        {noteValue: "F4", rhythmValue: "8n"},
-        {noteValue: "A4", rhythmValue: "8n"}
+        {noteValue: "C4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "Bb4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "B4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "F4", rhythmValue: "8n", isExtraNatural: false},
+        {noteValue: "A4", rhythmValue: "8n", isExtraNatural: false}
     ]);
     const { data: session } = useSession();
 
@@ -34,7 +34,8 @@ const PitchTest = () => {
 
             const newNote = {
                 noteValue: '',
-                rhythmValue: ''
+                rhythmValue: '',
+                isExtraNatural: false
             };
 
             newNote.noteValue = `${randomNum}4`;
@@ -52,6 +53,27 @@ const PitchTest = () => {
 
             newSetOfNotes.push(newNote);
         }
+
+        for(let i = 0; i < newSetOfNotes.length; i++) {
+            let currentFlatNote;
+            if(newSetOfNotes[i].noteValue[1].toLowerCase() === "b"){
+                currentFlatNote = newSetOfNotes[i];
+            }
+
+            for(let j = i + 1; j < newSetOfNotes.length; j++){
+                let currentNoteValue = currentFlatNote?.noteValue.slice(0, 2);
+                if(currentNoteValue){
+                    const splitNewNote = newSetOfNotes[j].noteValue.split(/\d+/)[0];
+                    if(currentNoteValue === splitNewNote) break;
+
+                    if((currentNoteValue[0] === splitNewNote[0]) && splitNewNote.length < 2){
+                        newSetOfNotes[j].isExtraNatural = true;
+                    }
+                }                          
+            }
+        }
+
+        console.log(newSetOfNotes);
         
         currentSlotNum = 0;
         setNotes(newSetOfNotes);
