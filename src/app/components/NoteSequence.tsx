@@ -12,16 +12,17 @@ interface Note {
 }
 
 interface NoteProps {
-    sheet_tones: Note[];
+    sheet_tones: Note[][];
     musicSheetID: number | null;
 }
 
 const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
-    const [notes, setNotes] = useState<Note[]>([]);
+    const [notes, setNotes] = useState<Note[][]>([]);
     const [playbackNotes, setPlaybackNotes] = useState<(Note | null)[]>();
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const synthRef = useRef<Tone.Synth | null>(null);
 
     const deleteSequence = async () => {
         console.log("delete this sequence: ", musicSheetID);
@@ -40,13 +41,16 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
     }
 
     useEffect(() => {
-        setPlaybackNotes(sheet_tones);
+        synthRef.current = new Tone.Synth().toDestination();
+        return () => {
+            synthRef.current?.dispose();
+            synthRef.current = null;
+        }
     }, []);
 
     useEffect(() => {
         if(!containerRef.current) return;
         containerRef.current.innerHTML = '';
-        
         setNotes(sheet_tones);
     }, [sheet_tones])
 
@@ -55,15 +59,17 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         
         if(!notes || notes.length === 0) return;
 
-        for(let i = 0; i < notes.length; i++) {
+        const combinedNotes = [...notes[0], ...notes[1]];
 
-            if(notes[i].rhythmValue === "8n"){
-                myPlaybackNotes.push(notes[i]);
+        for(let i = 0; i < combinedNotes.length; i++) {
+            if(combinedNotes[i].rhythmValue === "8n"){
+                myPlaybackNotes.push(combinedNotes[i]);
+                console.log(myPlaybackNotes);
             }
 
-            else if(notes[i].rhythmValue === "q"){
+            else if(combinedNotes[i].rhythmValue === "q"){
                 const newPlayNote = {
-                    noteValue: notes[i].noteValue,
+                    noteValue: combinedNotes[i].noteValue,
                     rhythmValue: "8n"
                 }
                 myPlaybackNotes.push(newPlayNote);
@@ -73,6 +79,21 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         setPlaybackNotes(myPlaybackNotes);
     }, [notes])
 
+    const getSheetMusicNote = (n) => {
+        const splitNote = n.noteValue.split('');
+        const currentOctave = splitNote[splitNote.length - 1];
+        const mainNote = splitNote.splice(0, splitNote.length-1).join('');
+
+        if(n.isExtraNatural){
+            return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental("n"));
+        }
+
+        if(mainNote.length < 2){
+            return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: n.rhythmValue});
+        }  
+        return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental(mainNote[1]));
+    }
+
     useEffect(() => {
         if(notes.length === 0) return;
         if(!containerRef.current) return;
@@ -80,7 +101,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         const { Barline } = VexFlow;
 
         const renderer = new VexFlow.Renderer(containerRef.current, VexFlow.Renderer.Backends.SVG);
-        renderer.resize(500, 200);
+        renderer.resize(1200, 200);
         
         const context = renderer.getContext();
         
@@ -91,48 +112,59 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
 
         const stave = new VexFlow.Stave(10, 40, 500);
         stave.addClef('treble').addTimeSignature('4/4');
+        stave.setEndBarType(Barline.type.SINGLE);
         stave.setContext(context).draw();
 
-        const vexNotes = notes.map((n) => {
-            const splitNote = n.noteValue.split('');
-            const currentOctave = splitNote[splitNote.length - 1];
-            const mainNote = splitNote.splice(0, splitNote.length-1).join('');
+        const stave2 = new VexFlow.Stave(stave.width + stave.getX(), 40, 500);
+        stave2.setBegBarType(Barline.type.SINGLE);
+        stave2.setEndBarType(Barline.type.END);
+        stave2.setContext(context).draw();
 
-            if(n.isExtraNatural){
-                return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental("n"));
-            }
-
-            if(mainNote.length < 2){
-                return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: n.rhythmValue});
-            }  
-            return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental(mainNote[1]));
-
+        const vexNotes = notes[0].map((n) => {
+            return getSheetMusicNote(n);
         })
+        const notes2 = notes[1].map((n) => {
+            return getSheetMusicNote(n);
+        })
+
+        //test stave2 / 2nd measure
+        // const notes2 = [
+        //     new VexFlow.StaveNote({ keys: ["g/4"], duration: "q" }),
+        //     new VexFlow.StaveNote({ keys: ["a/4"], duration: "q" }),
+        //     new VexFlow.StaveNote({ keys: ["b/4"], duration: "q" }),
+        //     new VexFlow.StaveNote({ keys: ["c/5"], duration: "q" }),
+        // ]
         
         const voice = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
         voice.addTickables(vexNotes);
 
-        const formatter = new VexFlow.Formatter();
-        formatter.joinVoices([voice]).formatToStave([voice], stave);
+        const voice2 = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
+        voice2.addTickables(notes2);
 
-        // new VexFlow.Formatter().joinVoices([voice]).format([voice], 400);
-        // new VexFlow.Formatter().joinVoices([voice2]).format([voice2], 400);
+        // const formatter = new VexFlow.Formatter();
+        // formatter.joinVoices([voice]).formatToStave([voice], stave);
+
+        // voice.draw(context, stave);
+
+        new VexFlow.Formatter().joinVoices([voice]).formatToStave([voice], stave)
+        new VexFlow.Formatter().joinVoices([voice2]).formatToStave([voice2], stave2);
 
         voice.draw(context, stave);
+        voice2.draw(context, stave2);
 
-        const barline = new Barline('end');
-        barline.setContext(context).setStave(stave);
-        barline.setX(stave.getWidth());
-        barline.draw();
+        // const barline = new Barline('end');
+        // barline.setContext(context).setStave(stave);
+        // barline.setX(stave.getWidth());
+        // barline.draw();
         context.restore();
     }, [notes]);
 
     useEffect(() => {
-            const seq = new Tone.Sequence((time, note) => {
-            // const synth = new Tone.PluckSynth().toDestination();
+        if(!playbackNotes || playbackNotes.length === 0) return;
+        
+        const seq = new Tone.Sequence((time, note) => {
             if(note !== null) {
-                const synth = new Tone.Synth().toDestination();
-                synth.triggerAttackRelease(note.noteValue, "8n", time);
+                synthRef.current?.triggerAttackRelease(note.noteValue, "8n", time);
             }
             
         }, playbackNotes, "8n");
@@ -146,7 +178,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         };
 
     }, [playbackNotes]);
-    
+
     const playSound = () => {
         setIsPlaying( (prev) => {
             const newIsPlaying = !prev;
@@ -160,7 +192,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
                     sequence.start(0);
                     Tone.Transport.start();
 
-                    const duration = notes.length * 500;
+                    // const duration = notes.length * 500;
                     const steps = sequence.length;
                     const stepDuration = Tone.Time("8n").toSeconds();
                     const stopTime = steps * stepDuration;
@@ -170,12 +202,6 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
                         Tone.Transport.stop();
                         sequence.stop();
                     }, `+${stopTime}`)
-
-                    setTimeout(() => {
-                        setIsPlaying(false);
-                        Tone.Transport.stop();
-                        sequence.stop();
-                    }, duration);
                 }
             }).catch(error => {
                 console.log("Error starting ToneJS: ", error);
@@ -188,6 +214,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         return newIsPlaying;
         })        
     }
+
 
     return(
         <div className={styles.musicContainer}>
