@@ -21,7 +21,7 @@ export default async function dashboard() {
 
     const showSequences = () => {
         return rows.map((musicSheet) => {
-            return <NoteSequence key={musicSheet.music_sheet_id} sheet_tones={musicSheet.sheet_tones} musicSheetID={musicSheet.music_sheet_id}/>
+                return <NoteSequence key={musicSheet.music_sheet_id} sheet_tones={musicSheet.sheet_tones} musicSheetID={musicSheet.music_sheet_id}/>
         })
     }
     
