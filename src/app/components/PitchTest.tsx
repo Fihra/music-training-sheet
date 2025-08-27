@@ -9,14 +9,26 @@ const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"
 
 const PitchTest = () => {
     const [notes, setNotes] = useState([
-        {noteValue: "C4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "Bb4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "B4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "F4", rhythmValue: "8n", isExtraNatural: false},
-        {noteValue: "A4", rhythmValue: "8n", isExtraNatural: false}
+        [
+            {noteValue: "C4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "Bb4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "E4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "B4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "F4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "A4", rhythmValue: "8n", isExtraNatural: false}
+        ],
+        [
+            {noteValue: "D4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "Bb4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "F4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "Bb4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "B4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "F4", rhythmValue: "8n", isExtraNatural: false},
+            {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false}
+        ]
     ]);
     const { data: session } = useSession();
 
@@ -73,10 +85,15 @@ const PitchTest = () => {
             }
         }
 
-        console.log(newSetOfNotes);
-        
         currentSlotNum = 0;
-        setNotes(newSetOfNotes);
+        return newSetOfNotes;
+    }
+
+    const generateNoteCollection = () => {
+        const outputCollection = [];
+        outputCollection.push(randomizeNotes());
+        outputCollection.push(randomizeNotes());
+        setNotes(outputCollection);
     }
 
     const addSequence = async () => {
@@ -95,7 +112,7 @@ const PitchTest = () => {
     return(
         <div className={styles.generateContainer}>
             <h2>Pitch Testing</h2>
-            <button className={styles.cta} onClick={randomizeNotes}>Generate Sequence</button>
+            <button className={styles.cta} onClick={generateNoteCollection}>Generate Sequence</button>
             <NoteSequence sheet_tones={notes} musicSheetID={null}/>
             {session && <button className={styles.cta} onClick={addSequence}>Add to list</button>}
 
