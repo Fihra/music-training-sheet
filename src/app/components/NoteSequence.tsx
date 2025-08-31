@@ -64,7 +64,6 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         for(let i = 0; i < combinedNotes.length; i++) {
             if(combinedNotes[i].rhythmValue === "8n"){
                 myPlaybackNotes.push(combinedNotes[i]);
-                console.log(myPlaybackNotes);
             }
 
             else if(combinedNotes[i].rhythmValue === "q"){
