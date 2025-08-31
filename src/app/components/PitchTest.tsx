@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import NoteSequence from './NoteSequence';
 import styles from "../page.module.css";
+import {keySignatures} from "./KeySignatures";
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -30,7 +31,46 @@ const PitchTest = () => {
             {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false}
         ]
     ]);
+    const [preferences, setPreferences] = useState({
+        quarterNotes: false,
+        eighthNotes: true,
+        keySignature: "C",
+        timeSignature: "4/4"
+    })
+    const [ isAnyPrefChecked, setIsAnyPrefChecked ] = useState(true);
     const { data: session } = useSession();
+
+    const handlePreferenceChange = (e:any) => {
+        const currentNoteSwitch = e.target.name;
+        switch(currentNoteSwitch){
+            case "quarterNoteChange":
+                setPreferences(prevPref => ({
+                    ...prevPref,
+                    quarterNotes: !preferences.quarterNotes
+                }))
+                break;
+            case "eighthNoteChange":
+                    setPreferences(prevPref => ({
+                    ...prevPref,
+                    eighthNotes: !preferences.eighthNotes
+                }))
+                break;
+            default:
+                break;
+        }
+    }
+
+    useEffect(() => {
+        const prefNotes = [...[preferences.quarterNotes], ...[preferences.eighthNotes]];
+        const isAnyChecked = prefNotes.some((note) => note === true);
+
+        if(isAnyChecked){
+            setIsAnyPrefChecked(true);
+        } else {
+            setIsAnyPrefChecked(false);
+        }
+
+    }, [preferences])
 
     const randomizeRhythm = () => {
         const randomNum = Math.floor(Math.random() * 10);
@@ -52,15 +92,27 @@ const PitchTest = () => {
 
             newNote.noteValue = `${randomNum}4`;
 
-            if(randomizeRhythm() > 5){              
-                newNote.rhythmValue = "8n";
-                currentSlotNum+=1;
-            } else {
-                if(currentSlotNum === 7){
-                    continue;
+            if(preferences.eighthNotes && preferences.quarterNotes){
+                if(randomizeRhythm() > 5){
+                    newNote.rhythmValue = "8n";
+                    currentSlotNum+=1;
+                } else {
+                    if(currentSlotNum === 7){
+                        continue;
+                    }
+                    newNote.rhythmValue = "q";
+                    currentSlotNum+=2;
                 }
+            }
+
+            if(!preferences.eighthNotes && preferences.quarterNotes){
                 newNote.rhythmValue = "q";
                 currentSlotNum+=2;
+            }
+
+            if(preferences.eighthNotes && !preferences.quarterNotes){
+                newNote.rhythmValue = "8n";
+                currentSlotNum+=1;
             }
 
             newSetOfNotes.push(newNote);
@@ -89,11 +141,13 @@ const PitchTest = () => {
         return newSetOfNotes;
     }
 
-    const generateNoteCollection = () => {
-        const outputCollection = [];
-        outputCollection.push(randomizeNotes());
-        outputCollection.push(randomizeNotes());
-        setNotes(outputCollection);
+    const generateNoteCollection = () => {     
+        if(isAnyPrefChecked){
+            const outputCollection = [];
+            outputCollection.push(randomizeNotes());
+            outputCollection.push(randomizeNotes());
+            setNotes(outputCollection);
+        }
     }
 
     const addSequence = async () => {
@@ -111,7 +165,14 @@ const PitchTest = () => {
 
     return(
         <div className={styles.generateContainer}>
-            <h2>Pitch Testing</h2>
+            <h2>Music Generator</h2>
+            <div>
+                <label>Quarter Notes</label>
+                <input type="checkbox" name="quarterNoteChange" checked={preferences.quarterNotes} onChange={handlePreferenceChange}/>
+                <label>Eighth Notes</label>
+                <input type="checkbox" name="eighthNoteChange" checked={preferences.eighthNotes} onChange={handlePreferenceChange}/>
+                {!isAnyPrefChecked ? <p>*At least one box must be checked</p> : ""}
+            </div>
             <button className={styles.cta} onClick={generateNoteCollection}>Generate Sequence</button>
             <NoteSequence sheet_tones={notes} musicSheetID={null}/>
             {session && <button className={styles.cta} onClick={addSequence}>Add to list</button>}
