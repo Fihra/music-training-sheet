@@ -30,9 +30,14 @@ body {
 
 }
 
-.generateContainer {
+.generateContainer, .dashboardContainer  {
   text-align: center;
+  padding-top: 25px;
 }
+
+/* .generateContainer h2{
+  padding-top: 
+} */
 
 /* @media (prefers-color-scheme: dark) {
   .page {
@@ -151,6 +156,10 @@ a.secondary {
   justify-content: center;
   background-color: blue;
   padding: 20px;
+}
+
+.navbar div {
+  padding-top: 25px;
 }
 
 .navlink {
