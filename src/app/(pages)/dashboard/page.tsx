@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import NoteSequence from "@/app/components/NoteSequence";
 import styles from "../../page.module.css";
+import { RowDataPacket } from "mysql2";
 
 export default async function dashboard() {  
     const session = await getServerSession(authOptions);
@@ -14,7 +15,7 @@ export default async function dashboard() {
         redirect("/login");
     }
 
-    const [rows] = await db.query(
+    const [rows] = await db.query<RowDataPacket[]>(
         "SELECT * FROM musicSheets WHERE user_id = ?",
         [session.user.user_id]
     );
@@ -29,7 +30,6 @@ export default async function dashboard() {
         <div className={styles.dashboardContainer}>
             <h1>Welcome back!</h1>
             <p>Email: {session.user?.email}</p>
-            {/* <p>{JSON.stringify(rows, null, 2)}</p> */}
             {showSequences()}
         </div>
     )
