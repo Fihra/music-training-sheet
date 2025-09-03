@@ -24,13 +24,13 @@ export async function GET(req:  NextRequest) {
 export async function POST(req: NextRequest, res: NextResponse) {
     try {
         const body = await req.json();
-        const { musicSheet, user_id} = body;
+        const { musicSheet, user_id, key_signature} = body;
 
         const connection = await db.getConnection();
 
         const [result] = await connection.query<ResultSetHeader>(
-            "INSERT INTO musicsheets (user_id, sheet_tones) VALUES (?, ?)", [
-                user_id, JSON.stringify(musicSheet)
+            "INSERT INTO musicsheets (user_id, sheet_tones, key_signature) VALUES (?, ?, ?)", [
+                user_id, JSON.stringify(musicSheet), key_signature
             ]
         )
 
