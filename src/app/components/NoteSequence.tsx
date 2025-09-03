@@ -11,12 +11,23 @@ interface Note {
     isExtraNatural: boolean;
 }
 
+    //    quarterNotes: false,
+    //     eighthNotes: true,
+    //     keySignature: "C",
+    //     timeSignature: "4/4"
+
 interface NoteProps {
     sheet_tones: Note[][];
     musicSheetID: number | null;
+    musicPrefs: {
+        quarterNotes: boolean;
+        eighthNotes: boolean;
+        keySignature: string;
+        timeSignature: string;
+    }
 }
 
-const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
+const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState<Note[][]>([]);
@@ -75,6 +86,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
                 myPlaybackNotes.push(null);
             }
         }
+
         setPlaybackNotes(myPlaybackNotes);
     }, [notes])
 
@@ -111,6 +123,7 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
 
         const stave = new VexFlow.Stave(10, 40, 500);
         stave.addClef('treble').addTimeSignature('4/4');
+        stave.addKeySignature(musicPrefs && musicPrefs.keySignature === "C" ? musicPrefs.keySignature : "C");
         stave.setEndBarType(Barline.type.SINGLE);
         stave.setContext(context).draw();
 
@@ -178,6 +191,63 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
 
     }, [playbackNotes]);
 
+    const getSequenceDuration = () => {
+        let totalDuration = 0;
+
+        sequence?.events.forEach((event) => {
+            // console.log("current event: ", event);
+
+            let tempRhythm = event?.rhythmValue ?? "8n";
+
+            console.log(tempRhythm);
+
+            const duration = Tone.Time(tempRhythm).toSeconds();
+            totalDuration += duration;
+        })
+        return totalDuration;
+    }
+
+    const handleRecord = async () => {
+        const recorder = new Tone.Recorder();
+
+        if(synthRef.current){
+            const synth = synthRef.current;
+
+            synth.disconnect();
+            synth.connect(recorder);
+            // synthRef.current.connect(recorder);
+
+            await recorder.start();
+            Tone.Transport.start();
+            sequence?.start();
+
+            Tone.Transport.once('stop', async () => {
+                // Tone.Transport.stop();
+                const buffer = await recorder.stop();
+
+                synth.disconnect(recorder);
+                synth.toDestination();
+
+                console.log("buffer: ", buffer);
+
+                const oggBlob = new Blob([buffer], {type: "audio/ogg"});
+                const url = URL.createObjectURL(oggBlob);
+
+                const downloadLink = document.createElement("a");
+                downloadLink.href = url;
+                downloadLink.download = "sequence.ogg";
+                downloadLink.click();
+
+                URL.revokeObjectURL(url);
+            } )
+
+            setTimeout(() => {
+                Tone.Transport.stop();
+            }, getSequenceDuration() * 1500)
+
+        }       
+    }
+
     const playSound = () => {
         setIsPlaying( (prev) => {
             const newIsPlaying = !prev;
@@ -186,8 +256,10 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
             Tone.start().then(() => {
                 if(sequence){
                     Tone.Transport.stop();
+                    Tone.Transport.cancel();
                     Tone.Transport.position = 0;
 
+                    sequence.stop();
                     sequence.start(0);
                     Tone.Transport.start();
 
@@ -219,7 +291,10 @@ const NoteSequence = ({sheet_tones, musicSheetID} : NoteProps) => {
         <div className={styles.musicContainer}>
             <div ref={containerRef}/>
             <button className={styles.cta} onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
-            {musicSheetID && <button className={styles.cta} onClick={deleteSequence}>Delete</button>}
+            {musicSheetID && <button className={styles.deleteCta} onClick={deleteSequence}>Delete</button>}
+            <button className={styles.cta} onClick={handleRecord}>
+                Export Audio (OGG)
+            </button>
         </div>
     )
 }
