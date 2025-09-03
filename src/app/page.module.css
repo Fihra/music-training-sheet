@@ -19,12 +19,15 @@
 }
 
 body {
-  background-color: rgb(207, 186, 141);
+  /* background-color: rgb(207, 186, 141); */
+  background-color: #ffeebd;
   color: black;
 }
 
 .musicContainer {
-  background-color: rgb(207, 186, 141);
+  /* background-color: rgb(207, 186, 141); */
+  background-color: #ffeebd;
+
 }
 
 .generateContainer {
@@ -160,8 +163,8 @@ a.secondary {
 }
 
 .navlink:hover {
-  box-shadow: -4px 0 4px 0 rgba(141, 255, 88, 0.5),
-              4px 0 4px 0 rgba(141, 255, 88, 0.5);
+  box-shadow: -4px 0 4px 0 rgba(165, 227, 255, 0.5),
+              4px 0 4px 0 rgba(165, 227, 255, 0.5);
 }
 
 .dashboardContainer {
@@ -186,8 +189,26 @@ a.secondary {
   padding: 25px;
 }
 
-.cta {
+.cta, .deleteCta {
   padding: 15px;
+  border-radius: 20px;
+  font-size: 18px;
+  /* margin: 10px; */
+  position: relative;
+  margin-top: 0px;
+  /* margin-bottom: -20px; */
+  background-color: blue;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.deleteCta:hover {
+  background-color: rgb(250, 45, 45);
+  color: black;
+}
+
+.cta:hover {
+  background-color: rgb(165, 227, 255);
+  color: black;
 }
 
 
