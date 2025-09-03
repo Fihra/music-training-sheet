@@ -4,7 +4,7 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import NoteSequence from './NoteSequence';
 import styles from "../page.module.css";
-import {keySignatures} from "./KeySignatures";
+import {keySignatures, allPitches, scales} from "./KeySignatures";
 
 const pitches = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -31,10 +31,12 @@ const PitchTest = () => {
             {noteValue: "G4", rhythmValue: "8n", isExtraNatural: false}
         ]
     ]);
+    const [currentKeySignature, setCurrentKeySignature ] = useState("C");
     const [preferences, setPreferences] = useState({
         quarterNotes: false,
         eighthNotes: true,
-        keySignature: "C",
+        isChromatic: false,
+        currentKeySignature: "C",
         timeSignature: "4/4"
     })
     const [ isAnyPrefChecked, setIsAnyPrefChecked ] = useState(true);
@@ -55,6 +57,11 @@ const PitchTest = () => {
                     eighthNotes: !preferences.eighthNotes
                 }))
                 break;
+            case "chromaticChange":
+                    setPreferences(prevPref => ({
+                        ...prevPref,
+                        isChromatic: !preferences.isChromatic
+                    }))
             default:
                 break;
         }
@@ -82,7 +89,7 @@ const PitchTest = () => {
         let currentSlotNum = 0;
 
         while(currentSlotNum < 8){
-            const randomNum = pitches[Math.floor(Math.random() * pitches.length)];
+            let currentScale = scales[preferences.currentKeySignature];
 
             const newNote = {
                 noteValue: '',
@@ -90,7 +97,15 @@ const PitchTest = () => {
                 isExtraNatural: false
             };
 
-            newNote.noteValue = `${randomNum}4`;
+            let randomNote = '';
+
+            if(preferences.isChromatic){
+                randomNote = preferences.isChromatic && allPitches[Math.floor(Math.random() * allPitches.length)];
+            } else {
+                randomNote = !preferences.isChromatic && currentScale[Math.floor(Math.random() * currentScale.length)];
+            }
+
+            newNote.noteValue = `${randomNote}4`;
 
             if(preferences.eighthNotes && preferences.quarterNotes){
                 if(randomizeRhythm() > 5){
@@ -120,7 +135,8 @@ const PitchTest = () => {
 
         for(let i = 0; i < newSetOfNotes.length; i++) {
             let currentFlatNote;
-            if(newSetOfNotes[i].noteValue[1].toLowerCase() === "b"){
+
+            if((newSetOfNotes[i].noteValue[1].toLowerCase() === "b") || (newSetOfNotes[i].noteValue[1] === "#") || newSetOfNotes[i].noteValue[1] === "x"){
                 currentFlatNote = newSetOfNotes[i];
             }
 
@@ -136,7 +152,6 @@ const PitchTest = () => {
                 }                          
             }
         }
-
         currentSlotNum = 0;
         return newSetOfNotes;
     }
@@ -150,7 +165,7 @@ const PitchTest = () => {
     const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
         setPreferences(prevPref => ({
             ...prevPref,
-            keySignature: e.target.value
+            currentKeySignature: e.target.value
         }))
     }
 
@@ -159,12 +174,15 @@ const PitchTest = () => {
             const outputCollection = [];
             outputCollection.push(randomizeNotes());
             outputCollection.push(randomizeNotes());
+            setCurrentKeySignature(preferences.currentKeySignature);
             setNotes(outputCollection);
         }
     }
 
     const addSequence = async () => {
         const noteSequence = notes;
+        const newKey = currentKeySignature;
+
         if(!session?.user) return;
 
         const res = await fetch('/api/musicsheets', {
@@ -172,17 +190,19 @@ const PitchTest = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({musicSheet: noteSequence, user_id: session.user.user_id})
+            body: JSON.stringify({musicSheet: noteSequence, user_id: session.user.user_id, key_signature: newKey})
         })
     }
 
     return(
         <div className={styles.generateContainer}>
             <h2>Music Generator</h2>
-            <div>
+            <div style={{paddingTop: "25px"}}>
                 <select name="keysDropdown" onChange={handleKeyChange}>
                     {showKeysDropdownOptions()}
                 </select>
+                <label>Chromatic</label>
+                <input type="checkbox" name="chromaticChange" checked={preferences.isChromatic} onChange={handlePreferenceChange}/>
                 <label>Quarter Notes</label>
                 <input type="checkbox" name="quarterNoteChange" checked={preferences.quarterNotes} onChange={handlePreferenceChange}/>
                 <label>Eighth Notes</label>
