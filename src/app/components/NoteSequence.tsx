@@ -19,15 +19,16 @@ interface Note {
 interface NoteProps {
     sheet_tones: Note[][];
     musicSheetID: number | null;
+    keySig: string;
     musicPrefs: {
         quarterNotes: boolean;
         eighthNotes: boolean;
-        keySignature: string;
+        currentKeySignature: string;
         timeSignature: string;
     }
 }
 
-const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
+const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProps) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState<Note[][]>([]);
@@ -101,7 +102,8 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
 
         if(mainNote.length < 2){
             return new VexFlow.StaveNote({ keys: [`${mainNote}/${currentOctave}`], duration: n.rhythmValue});
-        }  
+        }
+
         return new VexFlow.StaveNote({ keys: [`${mainNote[0]}/${currentOctave}`], duration: n.rhythmValue}).addModifier(new VexFlow.Accidental(mainNote[1]));
     }
 
@@ -123,7 +125,7 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
 
         const stave = new VexFlow.Stave(10, 40, 500);
         stave.addClef('treble').addTimeSignature('4/4');
-        stave.addKeySignature(musicPrefs && musicPrefs.keySignature === "C" ? musicPrefs.keySignature : "C");
+        stave.addKeySignature((musicPrefs && musicPrefs.currentKeySignature !== "C") || (keySig !== "C") ? keySig || musicPrefs.currentKeySignature : "C");
         stave.setEndBarType(Barline.type.SINGLE);
         stave.setContext(context).draw();
 
@@ -195,12 +197,7 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
         let totalDuration = 0;
 
         sequence?.events.forEach((event) => {
-            // console.log("current event: ", event);
-
             let tempRhythm = event?.rhythmValue ?? "8n";
-
-            console.log(tempRhythm);
-
             const duration = Tone.Time(tempRhythm).toSeconds();
             totalDuration += duration;
         })
@@ -215,29 +212,23 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs} : NoteProps) => {
 
             synth.disconnect();
             synth.connect(recorder);
-            // synthRef.current.connect(recorder);
 
             await recorder.start();
             Tone.Transport.start();
             sequence?.start();
 
             Tone.Transport.once('stop', async () => {
-                // Tone.Transport.stop();
                 const buffer = await recorder.stop();
 
                 synth.disconnect(recorder);
                 synth.toDestination();
 
-                console.log("buffer: ", buffer);
-
                 const oggBlob = new Blob([buffer], {type: "audio/ogg"});
                 const url = URL.createObjectURL(oggBlob);
-
                 const downloadLink = document.createElement("a");
                 downloadLink.href = url;
                 downloadLink.download = "sequence.ogg";
                 downloadLink.click();
-
                 URL.revokeObjectURL(url);
             } )
 
