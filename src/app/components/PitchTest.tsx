@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import NoteSequence from './NoteSequence';
 import styles from "../page.module.css";
@@ -141,6 +141,19 @@ const PitchTest = () => {
         return newSetOfNotes;
     }
 
+    const showKeysDropdownOptions = ():any => {
+        return keySignatures.map(key => {
+            return (<option key={key}>{key}</option>)
+        })
+    }
+
+    const handleKeyChange = (e: ChangeEvent<HTMLSelectElement>) => {
+        setPreferences(prevPref => ({
+            ...prevPref,
+            keySignature: e.target.value
+        }))
+    }
+
     const generateNoteCollection = () => {     
         if(isAnyPrefChecked){
             const outputCollection = [];
@@ -167,6 +180,9 @@ const PitchTest = () => {
         <div className={styles.generateContainer}>
             <h2>Music Generator</h2>
             <div>
+                <select name="keysDropdown" onChange={handleKeyChange}>
+                    {showKeysDropdownOptions()}
+                </select>
                 <label>Quarter Notes</label>
                 <input type="checkbox" name="quarterNoteChange" checked={preferences.quarterNotes} onChange={handlePreferenceChange}/>
                 <label>Eighth Notes</label>
@@ -174,7 +190,7 @@ const PitchTest = () => {
                 {!isAnyPrefChecked ? <p>*At least one box must be checked</p> : ""}
             </div>
             <button className={styles.cta} onClick={generateNoteCollection}>Generate Sequence</button>
-            <NoteSequence sheet_tones={notes} musicSheetID={null}/>
+            <NoteSequence sheet_tones={notes} musicSheetID={null} musicPrefs={preferences}/>
             {session && <button className={styles.cta} onClick={addSequence}>Add to list</button>}
 
         </div>
