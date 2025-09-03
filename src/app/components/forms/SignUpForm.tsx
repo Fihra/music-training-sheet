@@ -21,7 +21,6 @@ const SignUpForm = () => {
 
     const handleSubmit = async (e:React.FormEvent) => {
         e.preventDefault();
-        // console.log(signupForm);
 
         const res = await fetch("/api/users/signup", {
             method: "POST",
@@ -29,7 +28,6 @@ const SignUpForm = () => {
             body: JSON.stringify(signupForm)
         });
 
-        console.log("Res: ", res.json());
 
         const data = await res.json();
         console.log(data);
