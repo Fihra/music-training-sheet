@@ -197,17 +197,26 @@ const PitchTest = () => {
     return(
         <div className={styles.generateContainer}>
             <h2>Music Generator</h2>
-            <div style={{paddingTop: "25px"}}>
-                <select name="keysDropdown" onChange={handleKeyChange}>
-                    {showKeysDropdownOptions()}
-                </select>
-                <label>Chromatic</label>
-                <input type="checkbox" name="chromaticChange" checked={preferences.isChromatic} onChange={handlePreferenceChange}/>
-                <label>Quarter Notes</label>
-                <input type="checkbox" name="quarterNoteChange" checked={preferences.quarterNotes} onChange={handlePreferenceChange}/>
-                <label>Eighth Notes</label>
-                <input type="checkbox" name="eighthNoteChange" checked={preferences.eighthNotes} onChange={handlePreferenceChange}/>
-                {!isAnyPrefChecked ? <p>*At least one box must be checked</p> : ""}
+            <div className={styles.preferenceContainer}>
+                <div className={styles.preference}>
+                    <label>Key Signature: </label>
+                    <select name="keysDropdown" onChange={handleKeyChange}>
+                        {showKeysDropdownOptions()}
+                    </select>
+                </div>
+                <div className={styles.preference}>
+                    <label>Chromatic: </label>
+                    <input type="checkbox" name="chromaticChange" checked={preferences.isChromatic} onChange={handlePreferenceChange}/>
+                </div>
+                <div className={styles.preference}>
+                    <label>Quarter Notes: </label>
+                    <input type="checkbox" name="quarterNoteChange" checked={preferences.quarterNotes} onChange={handlePreferenceChange}/>
+                </div>
+                <div className={styles.preference}>
+                    <label>Eighth Notes: </label>
+                    <input type="checkbox" name="eighthNoteChange" checked={preferences.eighthNotes} onChange={handlePreferenceChange}/>
+                    {!isAnyPrefChecked ? <p>*At least one box must be checked</p> : ""}
+                </div>
             </div>
             <button className={styles.cta} onClick={generateNoteCollection}>Generate Sequence</button>
             <NoteSequence sheet_tones={notes} musicSheetID={null} musicPrefs={preferences}/>
