@@ -20,19 +20,34 @@
 
 body {
   /* background-color: rgb(207, 186, 141); */
-  background-color: #ffeebd;
+  background-color: #BFB9B4;
   color: black;
 }
 
 .musicContainer {
   /* background-color: rgb(207, 186, 141); */
-  background-color: #ffeebd;
+  background-color: #BFB9B4;
 
 }
 
 .generateContainer, .dashboardContainer  {
   text-align: center;
   padding-top: 25px;
+}
+
+.preferenceContainer {
+  padding-top: 25px;
+  padding-bottom: 25px;
+  display: flex;
+  justify-content: center;
+}
+
+.preference {
+  padding-right: 25px;
+}
+
+.preference label {
+  padding: 10px;
 }
 
 /* .generateContainer h2{
@@ -154,7 +169,7 @@ a.secondary {
   height: 80px;
   padding-top: 20px;
   justify-content: center;
-  background-color: blue;
+  background-color: #1f5673;
   padding: 20px;
 }
 
@@ -198,20 +213,31 @@ a.secondary {
   padding: 25px;
 }
 
-.cta, .deleteCta {
+.cta, .playCta, .deleteCta, .exportCta {
   padding: 15px;
   border-radius: 20px;
   font-size: 18px;
   /* margin: 10px; */
   position: relative;
-  margin-top: 0px;
+  /* margin-top: 0px; */
+  margin: 0 5px;
   /* margin-bottom: -20px; */
-  background-color: blue;
+  background-color: #1f5673;
   transition: background-color 0.2s ease-in-out;
+}
+
+.playCta:hover {
+  background-color: rgb(105, 255, 100);
+  color: black;
 }
 
 .deleteCta:hover {
   background-color: rgb(250, 45, 45);
+  color: black;
+}
+
+.exportCta:hover {
+  background-color: rgb(255, 161, 73);
   color: black;
 }
 
@@ -264,3 +290,7 @@ a.secondary {
 
 
 
+.dashboardButtons {
+  display: flex;
+  justify-content: center;
+}
