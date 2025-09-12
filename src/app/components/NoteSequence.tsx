@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as Tone from 'tone';
 import VexFlow from 'vexflow';
+import { jsPDF } from "jspdf";
 import styles from "../page.module.css";
 
 interface Note {
@@ -11,21 +12,16 @@ interface Note {
     isExtraNatural: boolean;
 }
 
-    //    quarterNotes: false,
-    //     eighthNotes: true,
-    //     keySignature: "C",
-    //     timeSignature: "4/4"
-
 interface NoteProps {
     sheet_tones: Note[][];
     musicSheetID: number | null;
-    keySig: string;
-    musicPrefs: {
+    keySig?: string;
+    musicPrefs?: {
         quarterNotes: boolean;
         eighthNotes: boolean;
         currentKeySignature: string;
         timeSignature: string;
-    }
+    };
 }
 
 const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProps) => {
@@ -33,7 +29,7 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
     const [sequence, setSequence] = useState<Tone.Sequence | null>(null);
     const [notes, setNotes] = useState<Note[][]>([]);
     const [playbackNotes, setPlaybackNotes] = useState<(Note | null)[]>();
-    const containerRef = useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLCanvasElement | null>(null);
     const synthRef = useRef<Tone.Synth | null>(null);
 
     const deleteSequence = async () => {
@@ -52,8 +48,9 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
         }
     }
 
-    useEffect(() => {
+    useEffect(() => {       
         synthRef.current = new Tone.Synth().toDestination();
+        
         return () => {
             synthRef.current?.dispose();
             synthRef.current = null;
@@ -81,7 +78,8 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
             else if(combinedNotes[i].rhythmValue === "q"){
                 const newPlayNote = {
                     noteValue: combinedNotes[i].noteValue,
-                    rhythmValue: "8n"
+                    rhythmValue: "8n",
+                    isExtraNatural: combinedNotes[i].isExtraNatural
                 }
                 myPlaybackNotes.push(newPlayNote);
                 myPlaybackNotes.push(null);
@@ -91,7 +89,7 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
         setPlaybackNotes(myPlaybackNotes);
     }, [notes])
 
-    const getSheetMusicNote = (n) => {
+    const getSheetMusicNote = (n: Note) => {
         const splitNote = n.noteValue.split('');
         const currentOctave = splitNote[splitNote.length - 1];
         const mainNote = splitNote.splice(0, splitNote.length-1).join('');
@@ -113,19 +111,22 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
 
         const { Barline } = VexFlow;
 
-        const renderer = new VexFlow.Renderer(containerRef.current, VexFlow.Renderer.Backends.SVG);
+        const renderer = new VexFlow.Renderer(containerRef.current, VexFlow.Renderer.Backends.CANVAS);
         renderer.resize(1200, 200);
         
         const context = renderer.getContext();
         
-        // context.clear();
         context.save();
-        // context.setFillStyle("white");
-        // context.setStrokeStyle("white");
 
         const stave = new VexFlow.Stave(10, 40, 500);
         stave.addClef('treble').addTimeSignature('4/4');
-        stave.addKeySignature((musicPrefs && musicPrefs.currentKeySignature !== "C") || (keySig !== "C") ? keySig || musicPrefs.currentKeySignature : "C");
+        stave.addKeySignature(
+            (musicPrefs?.currentKeySignature && musicPrefs.currentKeySignature !== "C") || keySig !== "C"
+                ? keySig ?? musicPrefs?.currentKeySignature ?? "C"
+                : "C"
+        );
+
+
         stave.setEndBarType(Barline.type.SINGLE);
         stave.setContext(context).draw();
 
@@ -140,15 +141,7 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
         const notes2 = notes[1].map((n) => {
             return getSheetMusicNote(n);
         })
-
-        //test stave2 / 2nd measure
-        // const notes2 = [
-        //     new VexFlow.StaveNote({ keys: ["g/4"], duration: "q" }),
-        //     new VexFlow.StaveNote({ keys: ["a/4"], duration: "q" }),
-        //     new VexFlow.StaveNote({ keys: ["b/4"], duration: "q" }),
-        //     new VexFlow.StaveNote({ keys: ["c/5"], duration: "q" }),
-        // ]
-        
+    
         const voice = new VexFlow.Voice({ numBeats: 4, beatValue: 4});
         voice.addTickables(vexNotes);
 
@@ -166,10 +159,6 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
         voice.draw(context, stave);
         voice2.draw(context, stave2);
 
-        // const barline = new Barline('end');
-        // barline.setContext(context).setStave(stave);
-        // barline.setX(stave.getWidth());
-        // barline.draw();
         context.restore();
     }, [notes]);
 
@@ -277,15 +266,54 @@ const NoteSequence = ({sheet_tones, musicSheetID, musicPrefs, keySig} : NoteProp
         })        
     }
 
+    const handlePDF = () => {
+        const canvas = containerRef.current;
+
+        if(canvas) {
+
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+
+            // Desired width in PDF (in mm)
+            const pdfWidth = 180; // mm (you can adjust this as needed)
+            
+            // Convert canvas pixels to mm based on 96 DPI (standard browser DPI)
+            const pxToMm = 25.4 / 96;  // 25.4mm = 1 inch, 96 DPI = 96 pixels per inch
+
+            const canvasWidthInMm = canvasWidth * pxToMm;  // Convert to mm
+            const canvasHeightInMm = canvasHeight * pxToMm;  // Convert to mm
+
+            // Calculate the scaling factor for the PDF
+            const scaleFactor = pdfWidth / canvasWidthInMm;
+            const pdfHeight = canvasHeightInMm * scaleFactor;
+
+            // Create the PDF
+            const pdf = new jsPDF();
+            const imgData = canvas.toDataURL("image/png");
+            // Add the image to the PDF with the calculated dimensions
+            pdf.addImage(imgData, "PNG", 10, 10, pdfWidth, pdfHeight);
+
+
+                
+                // pdf.addImage(imgData, "PDF", 2, 2, 200, 100);
+                pdf.save("sheet_music.pdf");
+            }
+    }
+
 
     return(
         <div className={styles.musicContainer}>
-            <div ref={containerRef}/>
-            <button className={styles.cta} onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
-            {musicSheetID && <button className={styles.deleteCta} onClick={deleteSequence}>Delete</button>}
-            <button className={styles.cta} onClick={handleRecord}>
-                Export Audio (OGG)
-            </button>
+            <canvas ref={containerRef}/>
+            <div className={styles.dashboardButtons}>
+                <button className={styles.playCta} onClick={playSound}>{isPlaying ? "Stop": "Play"}</button>
+                {musicSheetID && <button className={styles.deleteCta} onClick={deleteSequence}>Delete</button>}
+                <button className={styles.cta} onClick={handleRecord}>
+                    Export Audio (OGG)
+                </button>
+                <button className={styles.exportCta} onClick={handlePDF}>
+                    Export PDF
+                </button>
+            </div>
         </div>
     )
 }
